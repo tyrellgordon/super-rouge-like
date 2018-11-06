@@ -7,12 +7,12 @@ public class BoardManager : MonoBehaviour {
 
  	[System.Serializable]
 	  public class Count{
-		 public int minumum;
+		 public int minimum;
 		 public int maximum;
 
 		 public Count(int min, int max)
 		 {
-			 minumum = min;
+			 minimum = min;
 			 maximum = max;
 
 		 }
@@ -35,15 +35,74 @@ public class BoardManager : MonoBehaviour {
 		private Transform boardHolder;
 		private List <Vector3> gridPositions = new List <Vector3>();
 
+		void InitialiseList(){
+			gridPositions.Clear();
 
+			for (int x = 1; x < columns - 1; x++)
+			{
+				for(int y = 1; y < rows - 1; y++){
+					gridPositions.Add(new Vector3(x,y,0f));
+				}
+			}
+		}
 
-	// Use this for initialization
-	void Start () {
-		
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
-	}
+		void BoardSetup (){
+			boardHolder = new GameObject ("Board").transform;
+			for(int x = -1; x < columns + 1; x++)
+			{
+				for(int y = - 1; y < rows + 1; y++){
+					GameObject toInstantiate = floorTiles[Random.Range(0, floorTiles.Length)];
+					if(x == -1 || x == columns || y == -1 || y == rows)
+						toInstantiate = outerWallTiles[Random.Range(0, outerWallTiles.Length)];
+
+						GameObject instance = Instantiate(toInstantiate, new Vector3(x,y,0f), Quaternion.identity) as GameObject;
+
+						instance.transform.SetParent(boardHolder);
+				}
+			}
+		}
+
+		Vector3 RandomPosition(){
+			int randomIndex = Random.Range(0, gridPositions.Count);
+			Vector3 RandomPosition = gridPositions[randomIndex];
+			gridPositions.RemoveAt(randomIndex);
+			return RandomPosition;
+
+		}
+
+		void LayoutObjectAtRandom(GameObject[] tileArray, int minumum, int maximum){
+
+			int objectCount = Random.Range(minumum, maximum + 1);
+
+			for( int i = 0; i < objectCount; i++){
+				Vector3 randomPosition = RandomPosition();
+				GameObject tileChoice = tileArray[Random.Range(0, tileArray.Length)];
+				Instantiate (tileChoice, randomPosition, Quaternion.identity);
+			}
+		}
+
+		 public void SetupScene (int level)
+        {
+            //Creates the outer walls and floor.
+            BoardSetup ();
+            
+            //Reset our list of gridpositions.
+            InitialiseList ();
+            
+            //Instantiate a random number of wall tiles based on minimum and maximum, at randomized positions.
+            LayoutObjectAtRandom (wallTiles, wallCount.minimum, wallCount.maximum);
+            
+            //Instantiate a random number of food tiles based on minimum and maximum, at randomized positions.
+            LayoutObjectAtRandom (foodTiles, foodCount.minimum, foodCount.maximum);
+            
+            //Determine number of enemies based on current level number, based on a logarithmic progression
+            int enemyCount = (int)Mathf.Log(level, 2f);
+            
+            //Instantiate a random number of enemies based on minimum and maximum, at randomized positions.
+            LayoutObjectAtRandom (enemyTiles, enemyCount, enemyCount);
+            
+            //Instantiate the exit tile in the upper right hand corner of our game board
+            Instantiate (exit, new Vector3 (columns - 1, rows - 1, 0f), Quaternion.identity);
+        }
+
 }
